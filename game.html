@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cards to Pair - Memory Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
+    
+    <!-- Firebase v9 CDN -->
+    <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Your web app's Firebase configuration
+    // TODO: Replace with your actual Firebase config
+    const firebaseConfig = {
+        apiKey: "AIzaSyBK9gxEpAfootaBY0MM0Gq-7uSG76k0Qt4",
+        authDomain: "simplegame-dev-fdb.firebaseapp.com",
+        projectId: "simplegame-dev-fdb",
+        storageBucket: "simplegame-dev-fdb.firebasestorage.app",
+        messagingSenderId: "637458062186",
+        appId: "1:637458062186:web:e2d48a3f6d8cfc6f126313"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Make Firebase services available globally
+    window.firebaseAuth = auth;
+    window.firebaseDb = db;
+    window.onAuthStateChanged = onAuthStateChanged;
+    window.signOut = signOut;
+    window.firestoreDoc = doc;
+    window.firestoreGetDoc = getDoc;
+    window.firestoreUpdateDoc = updateDoc;
+    window.firestoreSetDoc = setDoc;  // Add this line
+    window.firestoreCollection = collection;
+    window.firestoreAddDoc = addDoc;
+    window.firestoreServerTimestamp = serverTimestamp;
+    </script>
+</head>
+<body class="bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 min-h-screen">
+    
+    <!-- Auth Check Screen -->
+    <div id="auth-check" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 shadow-2xl text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Checking authentication...</p>
+        </div>
+    </div>
+
+    <!-- Not Logged In Screen -->
+    <div id="not-logged-in" class="flex items-center justify-center min-h-screen hidden">
+        <div class="bg-white rounded-lg p-8 shadow-2xl text-center max-w-md">
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">🃏 Cards to Pair</h1>
+            <p class="text-gray-600 mb-6">Please sign in to play the game and save your scores!</p>
+            <a href="gameboard.html" class="inline-block px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                Go to Login Page
+            </a>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="container mx-auto px-4 py-8 hidden">
+        
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-4">
+            <h1 class="text-2xl font-bold text-gray-800">🃏 Cards to Pair</h1>
+            <p class="text-sm text-slate-600 m-2" id="player-name"></p>
+            <a href="gameboard.html" class="m-2 font-bold px-4 py-2 bg-gray-600 text-xs text-white rounded hover:bg-gray-700 transition-colors">Dashboard</a>
+            <button onclick="logout()" class="m-2 font-bold px-4 py-2 bg-red-600 cursor-pointer text-xs text-white rounded hover:bg-red-700 transition-colors">Sign Out</button>
+        </div>
+
+        <!-- Game Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-6 sticky top-0">
+            <div class="bg-white rounded-lg p-4 text-center shadow-lg">
+                <p class="text-2xl font-bold text-blue-600" id="current-score">0</p>
+                <p class="text-sm text-gray-600">Score</p>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-lg">
+                <p class="text-2xl font-bold text-green-600" id="moves-count">0</p>
+                <p class="text-sm text-gray-600">Moves</p>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-lg">
+                <p class="text-2xl font-bold text-purple-600" id="pairs-found">0/8</p>
+                <p class="text-sm text-gray-600">Pairs</p>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-lg">
+                <p class="text-2xl font-bold text-orange-600" id="timer">00:00</p>
+                <p class="text-sm text-gray-600">Time</p>
+            </div>
+        </div>
+
+        <!-- Game Controls -->
+        <div class="bg-white rounded-lg p-4 mb-6 text-center shadow-lg">
+            <button id="new-game-btn" onclick="startNewGame()" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors mr-4">
+                New Game
+            </button>
+            <button id="pause-btn" onclick="togglePause()" class="px-6 py-3 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition-colors" disabled>
+                Pause
+            </button>
+        </div>
+
+        <!-- Game Board -->
+        <div class="bg-white rounded-lg p-4 shadow-lg">
+            <div id="game-board" class="grid grid-cols-4 gap-3 max-w-xs mx-auto">
+                <!-- Cards will be generated here -->
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">🎉 Congratulations!</h2>
+                <div id="game-results" class="mb-6">
+                    <!-- Results will be filled here -->
+                </div>
+                <div class="space-x-4">
+                    <button onclick="startNewGame()" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                        Play Again
+                    </button>
+                    <button onclick="closeGameOverModal()" class="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Game Variables
+        let currentUser = null;
+        let gameState = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            moves: 0,
+            score: 0,
+            gameStarted: false,
+            gamePaused: false,
+            gameTimer: null,
+            startTime: null,
+            elapsedTime: 0
+        };
+
+        // Card emojis for the memory game
+        const cardEmojis = ['🎈', '🎯', '🎪', '🎨', '🎭', '🎏', '🏆', '🎊'];
+        const cardPairs = [...cardEmojis, ...cardEmojis]; // Duplicate for pairs
+
+        // DOM Elements
+        const authCheck = document.getElementById('auth-check');
+        const notLoggedIn = document.getElementById('not-logged-in');
+        const gameContainer = document.getElementById('game-container');
+        const gameBoard = document.getElementById('game-board');
+        const currentScoreEl = document.getElementById('current-score');
+        const movesCountEl = document.getElementById('moves-count');
+        const pairsFoundEl = document.getElementById('pairs-found');
+        const timerEl = document.getElementById('timer');
+        const pauseBtn = document.getElementById('pause-btn');
+        const gameOverModal = document.getElementById('game-over-modal');
+
+        // Utility Functions
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateGameStats() {
+            currentScoreEl.textContent = gameState.score;
+            movesCountEl.textContent = gameState.moves;
+            pairsFoundEl.textContent = `${gameState.matchedPairs}/8`;
+        }
+
+        function updateTimer() {
+            if (!gameState.gameStarted || gameState.gamePaused) return;
+            
+            gameState.elapsedTime = Math.floor((Date.now() - gameState.startTime) / 1000);
+            timerEl.textContent = formatTime(gameState.elapsedTime);
+        }
+
+        function calculateScore() {
+            const baseScore = 1000;
+            const timeBonus = Math.max(0, 300 - gameState.elapsedTime);
+            const movesPenalty = gameState.moves * 5;
+            return Math.max(100, baseScore + timeBonus - movesPenalty);
+        }
+
+        // Game Functions
+        function initializeGame() {
+            // Shuffle cards
+            gameState.cards = shuffleArray(cardPairs).map((emoji, index) => ({
+                id: index,
+                emoji: emoji,
+                isFlipped: false,
+                isMatched: false
+            }));
+
+            // Reset game state
+            gameState.flippedCards = [];
+            gameState.matchedPairs = 0;
+            gameState.moves = 0;
+            gameState.score = 0;
+            gameState.gameStarted = false;
+            gameState.gamePaused = false;
+            gameState.startTime = null;
+            gameState.elapsedTime = 0;
+
+            // Clear timer
+            if (gameState.gameTimer) {
+                clearInterval(gameState.gameTimer);
+            }
+
+            renderGameBoard();
+            updateGameStats();
+            timerEl.textContent = "00:00";
+            pauseBtn.disabled = true;
+        }
+
+        function renderGameBoard() {
+            gameBoard.innerHTML = '';
+            
+            gameState.cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = `
+                    aspect-square bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg 
+                    flex items-center justify-center text-2xl font-bold cursor-pointer 
+                    transform transition-all duration-100 hover:scale-105 shadow-lg
+                    ${card.isFlipped || card.isMatched ? 'bg-gradient-to-br from-green-400 to-green-600' : ''}
+                    ${card.isMatched ? 'opacity-75' : ''}
+                `;
+                
+                cardElement.onclick = () => flipCard(card.id);
+                
+                if (card.isFlipped || card.isMatched) {
+                    cardElement.textContent = card.emoji;
+                    cardElement.classList.add('animate-pulse');
+                } else {
+                    cardElement.textContent = '?';
+                }
+                
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        function startGame() {
+            if (!gameState.gameStarted) {
+                gameState.gameStarted = true;
+                gameState.startTime = Date.now();
+                gameState.gameTimer = setInterval(updateTimer, 1000);
+                pauseBtn.disabled = false;
+            }
+        }
+
+        function flipCard(cardId) {
+            if (gameState.gamePaused || gameState.flippedCards.length >= 2) return;
+
+            const card = gameState.cards.find(c => c.id === cardId);
+            if (!card || card.isFlipped || card.isMatched) return;
+
+            // Start game on first move
+            if (!gameState.gameStarted) {
+                startGame();
+            }
+
+            // Flip the card
+            card.isFlipped = true;
+            gameState.flippedCards.push(card);
+
+            renderGameBoard();
+
+            // Check for match when 2 cards are flipped
+            if (gameState.flippedCards.length === 2) {
+                gameState.moves++;
+                setTimeout(checkForMatch, 600);
+            }
+        }
+
+        function checkForMatch() {
+            const [card1, card2] = gameState.flippedCards;
+
+            if (card1.emoji === card2.emoji) {
+                // Match found!
+                card1.isMatched = true;
+                card2.isMatched = true;
+                gameState.matchedPairs++;
+                gameState.score += 100;
+
+                // Check for game completion
+                if (gameState.matchedPairs === 8) {
+                    endGame();
+                }
+            } else {
+                // No match, flip back
+                card1.isFlipped = false;
+                card2.isFlipped = false;
+            }
+
+            gameState.flippedCards = [];
+            renderGameBoard();
+            updateGameStats();
+        }
+
+        function togglePause() {
+            gameState.gamePaused = !gameState.gamePaused;
+            pauseBtn.textContent = gameState.gamePaused ? 'Resume' : 'Pause';
+            
+            if (gameState.gamePaused) {
+                clearInterval(gameState.gameTimer);
+            } else {
+                gameState.startTime = Date.now() - (gameState.elapsedTime * 1000);
+                gameState.gameTimer = setInterval(updateTimer, 1000);
+            }
+        }
+
+        function startNewGame() {
+            closeGameOverModal();
+            initializeGame();
+        }
+
+        async function endGame() {
+            clearInterval(gameState.gameTimer);
+            gameState.score = calculateScore();
+
+            // Save score to Firebase
+            await saveGameScore();
+
+            // Show game over modal
+            showGameOverModal();
+        }
+
+        function showGameOverModal() {
+            const results = document.getElementById('game-results');
+            results.innerHTML = `
+                <div class="space-y-2">
+                    <p class="text-lg"><strong>Final Score:</strong> ${gameState.score}</p>
+                    <p><strong>Time:</strong> ${formatTime(gameState.elapsedTime)}</p>
+                    <p><strong>Moves:</strong> ${gameState.moves}</p>
+                    <p><strong>Pairs Found:</strong> ${gameState.matchedPairs}/8</p>
+                </div>
+            `;
+            gameOverModal.classList.remove('hidden');
+        }
+
+        function closeGameOverModal() {
+            gameOverModal.classList.add('hidden');
+        }
+
+        
+        // Firebase Functions
+        async function saveGameScore() {
+            if (!currentUser) return;
+
+            try {
+                // Get current user data
+                const userRef = window.firestoreDoc(window.firebaseDb, 'users', currentUser.uid);
+                const userSnap = await window.firestoreGetDoc(userRef);
+                
+                let userData = { highScore: 0, gamesPlayed: 0 };
+                if (userSnap.exists()) {
+                    userData = userSnap.data();
+                }
+
+                // Update high score if current score is higher
+                const newHighScore = Math.max(userData.highScore || 0, gameState.score);
+                const newGamesPlayed = (userData.gamesPlayed || 0) + 1;
+
+                // Create or update user profile using setDoc (which handles both create and update)
+                await window.firestoreSetDoc(userRef, {
+                    email: currentUser.email,
+                    highScore: newHighScore,
+                    gamesPlayed: newGamesPlayed,
+                    lastPlayed: window.firestoreServerTimestamp(),
+                    createdAt: userSnap.exists() ? userData.createdAt : window.firestoreServerTimestamp()
+                });
+
+                // Save game session
+                const gamesRef = window.firestoreCollection(window.firebaseDb, 'games');
+                await window.firestoreAddDoc(gamesRef, {
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    score: gameState.score,
+                    moves: gameState.moves,
+                    timeElapsed: gameState.elapsedTime,
+                    gameName: 'Cards to Pair',
+                    timestamp: window.firestoreServerTimestamp()
+                });
+
+                console.log('Score saved successfully!');
+            } catch (error) {
+                console.error('Error saving game score:', error);
+            }
+        }
+
+        async function logout() {
+            try {
+                await window.signOut(window.firebaseAuth);
+                window.location.href = 'gameboard.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Authentication Check
+        window.addEventListener('load', () => {
+            if (window.firebaseAuth && window.onAuthStateChanged) {
+                window.onAuthStateChanged(window.firebaseAuth, (user) => {
+                    authCheck.classList.add('hidden');
+                    
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('player-name').textContent = `Welcome, ${user.email.split('@')[0]}!`;
+                        gameContainer.classList.remove('hidden');
+                        initializeGame();
+                    } else {
+                        notLoggedIn.classList.remove('hidden');
+                    }
+                });
+            }
+        });
+
+        // Prevent page refresh during game
+        window.addEventListener('beforeunload', (e) => {
+            if (gameState.gameStarted && gameState.matchedPairs < 8) {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave? Your game progress will be lost.';
+            }
+        });
+    </script>
+</body>
+</html>

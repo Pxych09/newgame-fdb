@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Web Game 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
+    <script src="gameboard.js" defer></script>
+    
+    <!-- Firebase v9 CDN -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+                
+        import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Your web app's Firebase configuration
+        // TODO: Replace with your actual Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBK9gxEpAfootaBY0MM0Gq-7uSG76k0Qt4",
+            authDomain: "simplegame-dev-fdb.firebaseapp.com",
+            projectId: "simplegame-dev-fdb",
+            storageBucket: "simplegame-dev-fdb.firebasestorage.app",
+            messagingSenderId: "637458062186",
+            appId: "1:637458062186:web:e2d48a3f6d8cfc6f126313"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Make auth available globally
+        window.firebaseAuth = auth;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.signOut = signOut;
+
+        // Make Firebase services available globally
+        window.firebaseDb = db;
+        window.firestoreDoc = doc;
+        window.firestoreGetDoc = getDoc;
+        window.firestoreSetDoc = setDoc;
+        window.firestoreCollection = collection;
+        window.firestoreQuery = query;
+        window.firestoreOrderBy = orderBy;
+        window.firestoreLimit = limit;
+        window.firestoreGetDocs = getDocs;
+        window.firestoreWhere = where;
+    </script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+
+    <div class="mx-auto max-w-sm w-full px-5">
+
+        <!-- Login Form -->
+        <form id="login-form" class="bg-white p-6 flex flex-col items-center shadow-lg rounded-lg border">
+
+            <div class="mb-6 w-full text-center">
+                <h1 class="text-2xl font-bold text-gray-800">Welcome Back!</h1>
+                <p class="text-gray-600 mt-1">Sign in to your account</p>
+            </div>
+
+            <div class="w-full space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+                    <input type="email" id="email" autocomplete="true" required class="w-full px-3 py-2 border-b-2 border-gray-300 focus:border-indigo-600 focus:outline-none transition-colors">
+                    <span class="text-red-500 text-xs hidden" id="email-error">Please enter a valid email address</span>
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password:</label>
+                    <input type="password" id="password" required class="w-full px-3 py-2 border-b-2 border-gray-300 focus:border-indigo-600 focus:outline-none transition-colors">
+                    <span class="text-red-500 text-xs hidden" id="password-error">Password must be at least 6 characters</span>
+                </div>
+            </div>
+
+            <div class="mt-6 w-full space-y-3">
+                <button type="submit" class="w-full cursor-pointer px-5 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md 
+                hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="login-btn">
+                    <span id="login-text">Sign In</span>
+                    <span id="login-spinner" class="hidden">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Signing in...
+                    </span>
+                </button>
+
+                <button type="button" class="w-full cursor-pointer px-5 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg border hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors" id="register-btn">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div class="mt-4 w-full text-center">
+                <div class="text-sm text-red-500 font-medium hidden p-2 bg-red-50 rounded border border-red-200" id="error-message"></div>
+                <div class="text-sm text-green-500 font-medium hidden p-2 bg-green-50 rounded border border-green-200" id="success-message"></div>
+            </div>
+
+        </form>
+
+        <!-- Dashboard (shown after successful login) -->
+        <div id="dashboard" class="bg-white p-6 shadow-lg rounded-lg border hidden">
+            <!-- Your Stats Section -->
+            <div class="mb-2 text-lg text-indigo-700 font-bold text-gray-800">
+                <span class="capitalize mb-6" id="user-email"></span>'s Statistics:
+            </div>
+
+            <div class="mb-4 flex gap-2">
+                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-blue-500 to-blue-600">
+                    <div class="p-1 text-xs text-blue-100 font-bold">High Score</div>
+                    <div class="border-t p-1 text-sm font-bold text-white" id="user-high-score">-</div>
+                </div>
+                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-green-500 to-green-600">
+                    <div class="p-1 text-xs text-green-100 font-bold">Games Played</div>
+                    <div class="border-t p-1 text-sm font-bold text-white" id="user-games-played">-</div>
+                </div>
+                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-purple-500 to-purple-600">
+                    <div class="p-1 text-xs text-purple-100 font-bold">Global Rank</div>
+                    <div class="border-t p-1 text-sm font-bold text-white" id="user-rank">-</div>
+                </div>
+                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-orange-500 to-orange-600">
+                    <div class="p-1 text-xs text-orange-100 font-bold">Average Score</div>
+                    <div class="border-t p-1 text-sm font-bold text-white" id="user-avg-score">-</div>
+                </div>
+            </div>
+
+            <!-- Top Players Section -->
+            <div class="mb-2 text-lg text-indigo-700 font-bold text-gray-800 flex items-center justify-between">
+                🏆 Top Players <span class="text-[10px] text-slate-500">(By High Score)</span>
+            </div>
+
+            <div class="mb-4 flex gap-2">
+                <!-- Top Players by High Score -->
+                <div id="top-players-list" class="space-y-3 w-full">
+                    <!-- Top players will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Top Players Section -->
+            <div class="mb-2 text-lg text-indigo-700 font-bold text-gray-800 flex items-center justify-between">
+                🔥 Most Active <span class="text-[10px] text-slate-500">(By Games Played)</span>
+            </div>
+
+            <div class="mb-4 flex gap-2">
+            <!-- Most Active Players -->
+                <div id="most-active-list" class="space-y-3 w-full">
+                    <!-- Most active players will be loaded here -->
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" onclick="startGame()">
+                    Play Cards to Pair
+                </button>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

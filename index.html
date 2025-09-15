@@ -3,163 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Web Game 2025</title>
+    <title>Cards to Pair - Dashboard</title>
+    <script type="module" src="firebase-init.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
-    <script src="gameboard.js" defer></script>
-    
-    <!-- Firebase v9 CDN -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-                
-        import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0; 
+            padding: 0;
+            box-sizing: border-box;
+        } 
+        body {
+            visibility: hidden;
+        }
+        
+        body.auth-ready {
+            background: radial-gradient(ellipse at bottom, #0d1d31 0%, #0c0d13 100%);
+            visibility: visible;
+        }
 
-        // Your web app's Firebase configuration
-        // TODO: Replace with your actual Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyBK9gxEpAfootaBY0MM0Gq-7uSG76k0Qt4",
-            authDomain: "simplegame-dev-fdb.firebaseapp.com",
-            projectId: "simplegame-dev-fdb",
-            storageBucket: "simplegame-dev-fdb.firebasestorage.app",
-            messagingSenderId: "637458062186",
-            appId: "1:637458062186:web:e2d48a3f6d8cfc6f126313"
-        };
+        .text-shadow-sm {
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        /* Loading animation for better UX */
+        .loading-dots::after {
+            content: '';
+            animation: loading-dots 1.5s infinite;
+        }
 
-        // Make auth available globally
-        window.firebaseAuth = auth;
-        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.onAuthStateChanged = onAuthStateChanged;
-        window.signOut = signOut;
+        @keyframes loading-dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
 
-        // Make Firebase services available globally
-        window.firebaseDb = db;
-        window.firestoreDoc = doc;
-        window.firestoreGetDoc = getDoc;
-        window.firestoreSetDoc = setDoc;
-        window.firestoreCollection = collection;
-        window.firestoreQuery = query;
-        window.firestoreOrderBy = orderBy;
-        window.firestoreLimit = limit;
-        window.firestoreGetDocs = getDocs;
-        window.firestoreWhere = where;
-    </script>
+        /* Password toggle button styling */
+        .password-toggle {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #374151;
+        }
+
+        .password-input-container {
+            position: relative;
+        }
+        @media only screen and (max-width: 400px)  {
+            .custom-smView-block {
+                text-align: center;
+                display: grid; gap: .65em;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen">
-
-    <div class="mx-auto max-w-sm w-full px-5">
-
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    
+    <div class="container mx-auto max-w-4xl min-h-screen px-4">
         <!-- Login Form -->
-        <form id="login-form" class="bg-white p-6 flex flex-col items-center shadow-lg rounded-lg border">
-
-            <div class="mb-6 w-full text-center">
-                <h1 class="text-2xl font-bold text-gray-800">Welcome Back!</h1>
-                <p class="text-gray-600 mt-1">Sign in to your account</p>
-            </div>
-
-            <div class="w-full space-y-4">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
-                    <input type="email" id="email" autocomplete="true" required class="w-full px-3 py-2 border-b-2 border-gray-300 focus:border-indigo-600 focus:outline-none transition-colors">
-                    <span class="text-red-500 text-xs hidden" id="email-error">Please enter a valid email address</span>
+        <div id="login-form" class="bg-[#0d1d31] text-white dark:text-white rounded-lg shadow-md p-8 max-w-sm mx-auto mt-4">
+            <h1 class="text-2xl font-bold mb-2 text-center">Welcome User!</h1>
+            <p class="text-[#fcf9f4] mb-6 text-center">Sign in to your account or create a new one.</p>
+            
+            <form id="auth-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-white">Email:</label>
+                    <input id="email" type="email" class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autocomplete="true">
+                    <p id="email-error" class="text-red-500 text-xs mt-1 hidden">Please enter a valid email address</p>
                 </div>
                 
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password:</label>
-                    <input type="password" id="password" required class="w-full px-3 py-2 border-b-2 border-gray-300 focus:border-indigo-600 focus:outline-none transition-colors">
-                    <span class="text-red-500 text-xs hidden" id="password-error">Password must be at least 6 characters</span>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-white">Password:</label>
+                    <div class="password-input-container">
+                        <input id="password" type="password" class="mt-1 block w-full border border-gray-300 rounded-md p-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        <button type="button" id="toggle-password" class="password-toggle" aria-label="Toggle password visibility">
+                            <!-- Eye icon (hidden) -->
+                            <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <!-- Eye slash icon (visible) -->
+                            <svg id="eye-slash-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p id="password-error" class="text-red-500 text-xs mt-1 hidden">Password must be at least 6 characters</p>
                 </div>
-            </div>
-
-            <div class="mt-6 w-full space-y-3">
-                <button type="submit" class="w-full cursor-pointer px-5 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md 
-                hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="login-btn">
+                
+                <button id="login-btn" type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md flex items-center justify-center transition-colors">
                     <span id="login-text">Sign In</span>
-                    <span id="login-spinner" class="hidden">
-                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Signing in...
-                    </span>
+                    <svg id="login-spinner" class="animate-spin h-5 w-5 ml-2 hidden" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                 </button>
-
-                <button type="button" class="w-full cursor-pointer px-5 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg border hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors" id="register-btn">
-                    Create Account
-                </button>
-            </div>
-
-            <!-- Error/Success Messages -->
-            <div class="mt-4 w-full text-center">
-                <div class="text-sm text-red-500 font-medium hidden p-2 bg-red-50 rounded border border-red-200" id="error-message"></div>
-                <div class="text-sm text-green-500 font-medium hidden p-2 bg-green-50 rounded border border-green-200" id="success-message"></div>
-            </div>
-
-        </form>
-
-        <!-- Dashboard (shown after successful login) -->
-        <div id="dashboard" class="bg-white p-6 shadow-lg rounded-lg border hidden">
-            <!-- Your Stats Section -->
-            <div class="mb-2 text-lg text-indigo-700 font-bold text-gray-800">
-                <span class="capitalize mb-6" id="user-email"></span>'s Statistics:
-            </div>
-
-            <div class="mb-4 flex gap-2">
-                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-blue-500 to-blue-600">
-                    <div class="p-1 text-xs text-blue-100 font-bold">High Score</div>
-                    <div class="border-t p-1 text-sm font-bold text-white" id="user-high-score">-</div>
-                </div>
-                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-green-500 to-green-600">
-                    <div class="p-1 text-xs text-green-100 font-bold">Games Played</div>
-                    <div class="border-t p-1 text-sm font-bold text-white" id="user-games-played">-</div>
-                </div>
-                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-purple-500 to-purple-600">
-                    <div class="p-1 text-xs text-purple-100 font-bold">Global Rank</div>
-                    <div class="border-t p-1 text-sm font-bold text-white" id="user-rank">-</div>
-                </div>
-                <div class="flex-1 rounded-sm p-2 bg-gradient-to-br from-orange-500 to-orange-600">
-                    <div class="p-1 text-xs text-orange-100 font-bold">Average Score</div>
-                    <div class="border-t p-1 text-sm font-bold text-white" id="user-avg-score">-</div>
-                </div>
-            </div>
-
-            <!-- Top Players Section -->
-            <div class="mb-2 text-lg text-indigo-700 font-bold text-gray-800 flex items-center justify-between">
-                🏆 Top Players <span class="text-[10px] text-slate-500">(By High Score)</span>
-            </div>
-
-            <div class="mb-4 flex gap-2">
-                <!-- Top Players by High Score -->
-                <div id="top-players-list" class="space-y-3 w-full">
-                    <!-- Top players will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Top Players Section -->
-            <div class="mb-2 text-lg text-indigo-700 font-bold text-gray-800 flex items-center justify-between">
-                🔥 Most Active <span class="text-[10px] text-slate-500">(By Games Played)</span>
-            </div>
-
-            <div class="mb-4 flex gap-2">
-            <!-- Most Active Players -->
-                <div id="most-active-list" class="space-y-3 w-full">
-                    <!-- Most active players will be loaded here -->
-                </div>
-            </div>
-
-            <div class="space-y-3">
-                <button class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" onclick="startGame()">
-                    Play Cards to Pair
-                </button>
-            </div>
+            </form>
+            
+            <button id="register-btn" class="w-full mt-4 text-blue-500 hover:text-blue-600 underline transition-colors">Create Account</button>
+            
+            <p id="error-message" class="text-red-500 mt-4 text-sm hidden"></p>
+            <p id="success-message" class="text-green-500 mt-4 text-sm hidden"></p>
         </div>
 
+        <!-- Dashboard -->
+        <div id="dashboard" class="border-2 border-indigo-500 rounded-lg my-5 bg-white grid gap-2 px-2 pb-2 hidden">
+            <div class="py-4 mt-2 font-bold text-center">
+                <h1 class="text-3xl text-gray-600">Welcome to Dashboard!</h1>
+            </div>
+            
+            <div class="p-2 flex items-center mx-2 gap-2 custom-smView-block">
+                <div class="font-bold text-blue-700 flex-1">
+                    <span id="user-display-name"></span> (You)
+                </div>
+                <button id="inventory-button" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-md text-xs transition-colors">
+                    Inventory
+                </button>
+                <button id="logout-btn" class="hover:opacity-75 bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-md text-xs transition-colors">
+                    Sign Out
+                </button>
+            </div>
+
+            <div class="@container p-2">
+                <div class="border-2 border-gray-200 text-sm p-4 rounded-lg bg-gray-50">
+                    <p class="text-gray-700">Check these simple and yet amazing webpage games!</p>
+                </div>
+
+                <!-- Game 1: Pairings -->
+                <div class="mt-4 grid items-center gap-2 my-2 border-2 border-green-500 bg-white rounded-lg p-4">
+                    <button id="play-pair-button" class="hover:opacity-90 mx-auto max-sm:w-48 font-bold my-2 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md text-sm shadow-md text-shadow-sm transition-colors">
+                        🎮 Play Pairings
+                    </button>
+                    <div class="p-2">
+                        <h2 class="font-bold text-lg mb-3 text-gray-800">🏆 Top Players</h2>
+                        <div id="top-pair-players-list" class="space-y-2">
+                            <div class="text-center text-sm py-4 text-gray-600 bg-gray-100 rounded loading-dots">Loading</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game 2: Number Puzzle -->
+                <div class="mt-4 grid items-center gap-2 my-2 border-2 border-purple-500 bg-white rounded-lg p-4">
+                    <button id="play-puzzle-button" class="hover:opacity-90 mx-auto max-sm:w-48 font-bold my-2 bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 rounded-md text-sm shadow-md transition-colors">
+                        🧩 Number Puzzle
+                    </button>
+                    <div class="p-2">
+                        <h2 class="font-bold text-lg mb-3 text-gray-800">🧩 Top Players</h2>
+                        <div id="top-puzzle-players-list" class="space-y-2">
+                            <div class="text-center text-sm py-4 text-gray-600 bg-gray-100 rounded loading-dots">Loading</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Most Active Players -->
+                <div class="mt-4 grid items-center gap-2 my-2 border-2 border-indigo-500 bg-white rounded-lg p-4">
+                    <div class="p-2">
+                        <h2 class="font-bold text-lg mb-3 text-gray-800">👾 Most Active Players</h2>
+                        <div id="most-active-list" class="space-y-2">
+                            <div class="text-center text-sm py-4 text-gray-600 bg-gray-100 rounded loading-dots">Loading</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- end of dashboard -->
     </div>
+    
+    <script src="dashboard.js" type="module"></script>
+    <script>
+        // Password toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('toggle-password');
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeSlashIcon = document.getElementById('eye-slash-icon');
+
+            togglePassword.addEventListener('click', function() {
+                // Toggle the password input type
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Toggle the eye icons
+                if (type === 'text') {
+                    eyeIcon.classList.add('hidden');
+                    eyeSlashIcon.classList.remove('hidden');
+                } else {
+                    eyeIcon.classList.remove('hidden');
+                    eyeSlashIcon.classList.add('hidden');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

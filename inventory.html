@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cards to Pair - Inventory</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
+    <script type="module" src="firebase-init.js"></script>
+    <style>
+        *, *::before, *::after {
+            margin: 0; 
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            visibility: hidden;
+        }
+        
+        body.auth-ready {
+            visibility: visible;
+        }
+
+        /* Custom animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .animate-pulse-once {
+            animation: pulse 0.4s ease-in-out;
+        }
+
+        /* Tile preview styles */
+        .tile-preview {
+            width: 30px;
+            height: 30px;
+            font-size: .90rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            transition: all 0.2s ease;
+            display: grid; place-items: center;
+        }
+
+        .tile-preview:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .tile-preview.selected {
+            border-color: #4f8df1;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .tile-preview.replacing {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            animation: pulse 1s infinite;
+        }
+
+        /* Loading dots animation */
+        .loading-dots::after {
+            content: '';
+            animation: loading-dots 1.5s infinite;
+        }
+
+        @keyframes loading-dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Character count display */
+        .char-counter {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        /* Input focus styles */
+        .input-focus {
+            transition: all 0.2s ease;
+        }
+
+        .input-focus:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-linear-to-r from-cyan-500 to-blue-500 min-h-screen">
+    <!-- Auth Check Loading -->
+    <div id="auth-check" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600 loading-dots">Checking authentication</p>
+        </div>
+    </div>
+
+    <!-- Login Prompt -->
+    <div id="login-prompt" class="hidden fixed inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4 text-center animate-slide-in">
+            <div class="mb-6">
+                <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">🃏</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Cards to Pair</h1>
+                <p class="text-gray-600">Please sign in to manage your inventory!</p>
+            </div>
+            <a href="index.html" class="inline-block bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                Go to Login Page
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Inventory Container -->
+    <div id="inventory-container" class="hidden container mx-auto p-4 max-w-md border-2">
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h1 class="text-center text-2xl font-bold mb-2">🛠️ Your Inventory Settings</h1>
+            <p class="text-center"><small class="italic">Customize your gaming experience</small></p>
+
+            <div class="mt-2 p-2 flex items-center justify-end gap-2">
+                <a href="index.html" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-2 outline-1 rounded-lg font-xs transition-colors">Dashboard</a>
+                <button id="logout-btn" class="bg-red-100 hover:bg-red-200 text-red-700 py-1 px-2 outline-1 rounded-lg font-xs transition-colors">Sign Out</button>
+            </div>
+        </div>
+
+        <!-- User Stats Display -->
+        <div id="user-stats" class="bg-white rounded-2xl shadow-lg p-6 mb-6 hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <span class="mr-2">📊</span>
+                Your Game Statistics
+            </h2>
+            <div class="grid grid-cols-2 grid-cols-2 gap-4">
+                <div class="text-center p-3 bg-green-50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-600" id="pairs-high-score">0</div>
+                    <div class="text-sm text-gray-600">Pairs High Score</div>
+                </div>
+                <div class="text-center p-3 bg-purple-50 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-600" id="puzzle-best-moves">0</div>
+                    <div class="text-sm text-gray-600">Best Puzzle Moves</div>
+                </div>
+                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                    <div class="text-2xl font-bold text-blue-600" id="total-games">0</div>
+                    <div class="text-sm text-gray-600">Total Games</div>
+                </div>
+                <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-600" id="user-rank">#0</div>
+                    <div class="text-sm text-gray-600">Your Rank</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nickname Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <span class="mr-2">👤</span>
+                Nickname
+            </h2>
+
+            <div class="p-2">
+                <div class="flex gap-2">
+                    <input id="nickname-input" type="text" class="font-bold flex-1 border-2 rounded-lg p-3 text-xs" placeholder="Enter your display name" maxlength="20">
+                    <button id="save-nickname-btn" class="bg-green-400 text-white rounded-lg py-1 px-2 w-24 hover:bg-green-600">Save</button>
+                </div>
+                <div class="text-right px-2 border-t-2 my-2">
+                    <span class="char-counter" id="nickname-counter">0/20</span>
+                    <p class="text-left text-xs text-gray-500">This name will appear on leaderboards.</p>
+                </div>
+                <div class="text-right px-2 my-2">
+                    <div id="nickname-message" class="mt-3 text-sm hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Selection Section -->
+        <div class="bg-sky-100/50 rounded-2xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <span class="mr-2">🎴</span>
+                Custom Card Tiles
+            </h2>
+            <div class="p-2 text-xs italic bg-gray-100/50 my-3 text-center rounded-md">
+                Choose <span class="font-bold">8 unique characters</span> for your card pairs.
+            </div>
+
+            
+            <div class="rounded-xl px-4 mb-4">
+                <div id="tile-grid" class="flex flex-wrap justify-center gap-3">
+                    <!-- Placeholder tiles -->
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                    <div class="tile-preview opacity-30 text-shadow-md">?</div>
+                </div>
+            </div> 
+            
+            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                <div class="flex gap-2 justify-center">
+                    <input type="text" id="tile-input" maxlength="10" placeholder="'👻'" class="outline-1 outline- text-center w-1/6 py-2 input-focus font-bold border-2 rounded-lg text-md">
+                    <button id="add-tile-btn" class="bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center py-1 px-2 w-24">Add Tile</button>
+                </div>
+                <div class="px-2 border-t-2 mt-4">
+                    <p class="text-sm font-medium text-blue-600 text-right my-1">
+                        <span id="tile-count">0</span>/8 tiles
+                    </p>
+                    <p class="text-left text-xs text-gray-500">Examples: 🎮, A, ★, 🦄, 💎</p>
+                </div>
+            </div>
+            
+            <!-- Preset Options -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">Quick Presets</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button class="preset-btn bg-pink-100 hover:bg-pink-200 text-pink-700 py-2 px-4 rounded-lg text-sm transition-colors" data-preset="emojis">
+                        🎭 Fun Emojis
+                    </button>
+                    <button class="preset-btn bg-green-100 hover:bg-green-200 text-green-700 py-2 px-4 rounded-lg text-sm transition-colors" data-preset="animals">
+                        🐾 Animals
+                    </button>
+                    <button class="preset-btn bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-4 rounded-lg text-sm transition-colors" data-preset="symbols">
+                        ⭐ Symbols
+                    </button>
+                    <button class="preset-btn bg-purple-100 hover:bg-purple-200 text-purple-700 py-2 px-4 rounded-lg text-sm transition-colors" data-preset="letters">
+                        🔤 Letters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
+                <button id="clear-tiles-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center">
+                    <span class="mr-2">🗑️</span>
+                    Clear All
+                </button>
+                <button id="save-cards-btn" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                    <span class="mr-2">💾</span>
+                    Save Card Selection
+                </button>
+            </div>
+            
+            <div id="cards-message" class="mt-4 text-sm hidden"></div>
+        </div>
+    </div>
+
+    <script type="module" src="inventory.js"></script>
+</body>
+</html>

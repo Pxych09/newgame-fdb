@@ -346,7 +346,7 @@ async function topPlayerAtPuzzle() {
         // Query for best moves (fewest moves is better, so we order by ascending)
         const topMovesQuery = query(
             collection(db, "users"), 
-            orderBy("bestPuzzleMoves", "asc"), 
+            orderBy("bestPuzzleTime", "asc"), 
             limit(10)
         );
         
@@ -401,7 +401,7 @@ async function mostActivePlayers() {
     try {
         const activePlayersQuery = query(
             collection(db, "users"), 
-            orderBy("totalGamesPlayed", "asc"), 
+            orderBy("totalGamesPlayed", "desc"), 
             limit(5)
         );
         

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cards to Pair - Game</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/808/808439.png" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script type="module" src="firebase-init.js"></script>
 
     <style>
@@ -26,11 +26,12 @@
             aspect-ratio: 1;
             padding: 0;
             display: grid; place-items: center;
-            transform-style: preserve-3d;
             background-color: rgb(209, 232, 252);
             border-radius: 8px;
             cursor: pointer;
             transition: 200ms ease;
+            transform-style: preserve-3d;
+            transform: scale(-1, 1);
         }
         @media only screen and (max-width: 400px)  {
             #game-container > div:first-child {
@@ -58,7 +59,9 @@
         
         .flipped {
             outline: 1px solid whitesmoke !important;
-            transform: rotateY(180deg);
+            transform: scale(1) !important;
+            transform-style: preserve-3d !important;
+            transition: 200ms ease !important;
             background-color: rgb(146, 183, 218) !important;
         }
         .paired {
@@ -83,7 +86,7 @@
 </head>
 <body class="min-h-screen flex items-center justify-center">
     <!-- AUTH CHEKING -->
-    <div id="auth-check" class="text-center my-5 font-bold italic text-white">Checking authentication...</div>
+    <div id="auth-check" class="text-center my-5 font-bold italic dark:text-gray-400">Checking authentication...</div>
     
     <!-- FALL BACK CALL -->
     <div id="login-prompt" class="hidden bg-white rounded-lg shadow-md p-8 text-center">

@@ -62,6 +62,7 @@ function createPuzzle() {
     time = 0;
     timeEl.textContent = '00:00';
     clearInterval(timerInterval);
+    timerInterval = null; // ADD THIS LINE - Reset timerInterval to null
 }
 
 // Check if puzzle configuration is solvable

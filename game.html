@@ -27,6 +27,9 @@
             display: grid; place-items: center;
             transform-style: preserve-3d;
             background-color: rgb(209, 232, 252);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 200ms ease;
         }
         @media only screen and (max-width: 400px)  {
             #game-container > div:first-child {
@@ -39,7 +42,7 @@
                 margin-block: 0;
             }
             #game-board > div {
-                width: 3.65em;
+                width: 3.85em;
                 padding: 0;
             }
         }
@@ -97,7 +100,7 @@
             </div>
             <div class="my-2 mx-4">
                 <a href="index.html" class="text-blue-500 mr-4">Dashboard</a>
-                <button onclick="logout()" class="text-red-500">Sign Out</button>
+                <a href="inventory.html" class="text-white mr-4">Inventory</a>
             </div>
         </div>
 
@@ -128,9 +131,9 @@
         <div id="game-board" class="grid grid-cols-4 gap-4"></div>
 
         <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-white rounded-lg p-8 text-center">
+            <div class="bg-white text-indigo-500 rounded-lg p-8 text-center">
                 <h2 class="text-2xl font-bold mb-4">🎉 Congratulations!</h2>
-                <p class="mb-6">Your score: <span id="final-score"></span></p>
+                <p class="mb-6">Your score: <span id="final-score" class="font-bold"></span></p>
                 <button id="play-again-btn" class="bg-green-500 text-white py-2 px-4 rounded-md mr-2">Play Again</button>
                 <button id="close-modal-btn" class="bg-gray-500 text-white py-2 px-4 rounded-md">Close</button>
             </div>

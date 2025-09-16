@@ -328,7 +328,7 @@ async function topPlayerAtPairings() {
                         ${displayName} ${isCurrentUser ? "(You)" : ""}
                     </span>
                 </div>
-                <span class="font-bold text-sm text-green-600">${player.highScore || 0}</span>
+                <span class="font-bold text-sm text-purple-600">${player.highScore || 0}</span>
             `;
             
             refs.topPlayerPairs.appendChild(playerElement);
@@ -382,7 +382,7 @@ async function topPlayerAtPuzzle() {
                     </span>
                 </div>
                 <div class="text-right">
-                    <span class="font-bold text-xs text-purple-600">${player.bestPuzzleMoves} moves</span>
+                    <span class="font-bold text-xs text-green-600">${player.bestPuzzleMoves} moves</span>
                     ${player.bestPuzzleTime ? `<br><span class="text-xs text-gray-600">${formatTime(player.bestPuzzleTime)}</span>` : ''}
                 </div>
             `;

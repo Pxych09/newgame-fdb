@@ -83,7 +83,7 @@ function showMessage(element, message, type = 'success') {
         info: 'text-blue-600 bg-blue-50 border border-blue-200'
     };
     
-    element.className = `mt-3 text-sm p-3 rounded-lg ${classes[type] || classes.success}`;
+    element.className = `mt-3 text-center text-sm p-3 rounded-lg ${classes[type] || classes.success}`;
     
     // Auto-hide after 5 seconds
     setTimeout(() => {
@@ -119,7 +119,7 @@ async function saveNickname() {
 
     try {
         refs.saveNicknameBtn.disabled = true;
-        refs.saveNicknameBtn.innerHTML = '<span class="mr-2">⏳</span>Saving...';
+        refs.saveNicknameBtn.innerHTML = '⏳ Saving...';
         
         const userDocRef = doc(db, "users", currentUser.uid);
         await updateDoc(userDocRef, { nickname });
@@ -133,7 +133,7 @@ async function saveNickname() {
         showMessage(refs.nicknameMessage, `Error saving nickname: ${error.message}`, 'error');
     } finally {
         refs.saveNicknameBtn.disabled = false;
-        refs.saveNicknameBtn.innerHTML = '<span class="mr-2">💾</span>Save Nickname';
+        refs.saveNicknameBtn.innerHTML = 'Save';
     }
 }
 

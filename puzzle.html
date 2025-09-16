@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cards to Pair - Number Puzzle</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/808/808439.png" type="image/png">
 
     <script type="module" src="firebase-init.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="dark:text-white min-h-screen bg-[#0d1d31]">
     
     <!-- AUTH CHEKING -->
-    <div id="auth-check" class="text-center my-5 font-bold italic">Checking authentication...</div>
+    <div id="auth-check" class="text-center my-5 font-bold italic dark:text-white">Checking authentication...</div>
 
 
     <!-- FALL BACK CALL -->
@@ -25,7 +25,7 @@
 
 
     <!-- GAMEBOARD PUZLE -->
-    <div id="puzzle-container" class="hidden container mx-auto p-4 max-w-2xl bg-[#0d1d31] border-2 border-indigo-500 rounded-md my-5 dark:text-white text-white">
+    <div id="puzzle-container" class="hidden container mx-auto p-4 max-w-2xl bg-[#0d1d31] rounded-md my-5 dark:text-white text-white">
         <h1 class="text-md font-bold mb-4 text-center">🧩 Number Puzzle - Welcome, <span id="user-display-name"></span>!</h1>
         <div id="puzzle-board" class="grid grid-cols-4 gap-2 mb-4"></div>
 

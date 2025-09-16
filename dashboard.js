@@ -297,7 +297,7 @@ async function topPlayerAtPairings() {
         const topPlayersQuery = query(
             collection(db, "users"), 
             orderBy("highScore", "desc"), 
-            limit(5)
+            limit(10)
         );
         
         const querySnapshot = await getDocs(topPlayersQuery);
@@ -347,7 +347,7 @@ async function topPlayerAtPuzzle() {
         const topMovesQuery = query(
             collection(db, "users"), 
             orderBy("bestPuzzleMoves", "asc"), 
-            limit(5)
+            limit(10)
         );
         
         const querySnapshot = await getDocs(topMovesQuery);
@@ -401,7 +401,7 @@ async function mostActivePlayers() {
     try {
         const activePlayersQuery = query(
             collection(db, "users"), 
-            orderBy("totalGamesPlayed", "desc"), 
+            orderBy("totalGamesPlayed", "asc"), 
             limit(5)
         );
         

@@ -21,6 +21,8 @@ const hitsDisplay = document.getElementById('hitsWhack');
 const missedDisplay = document.getElementById('missedWhack');
 const accuracyDisplay = document.getElementById('accuracyWhack');
 const dashboardBtn = document.getElementById('dashBoardWhack');
+const whackResults = document.getElementById('whackResults');
+
 const holes = document.querySelectorAll('.hole');
 const moles = document.querySelectorAll('.mole');
 
@@ -45,6 +47,7 @@ let maxSimultaneousMoles = 1;
 function startGame() {
     if (gameActive) return;
     
+    whackResults.classList.add('hidden');
     resetGame();
     gameActive = true;
     startWhackBtn.textContent = 'Playing...';
@@ -312,17 +315,22 @@ function endGame() {
     const totalAttempts = hits + missed;
     const accuracy = totalAttempts > 0 ? Math.round((hits / totalAttempts) * 100) : 0;
     const avgPointsPerHit = hits > 0 ? Math.round(score / hits) : 0;
+
     
     // Show comprehensive final score
     setTimeout(() => {
-        alert(`🎯 Game Over!\n\n` +
-              `Final Score: ${score} points\n` +
-              `Hits: ${hits} | Missed: ${missed}\n` +
-              `Accuracy: ${accuracy}%\n` +
-              `Average Points/Hit: ${avgPointsPerHit}\n` +
-              `Best Combo: ${Math.max(consecutiveHits, 0)}x`);
+        whackResults.classList.remove('hidden')
+        whackResults.innerHTML = `
+        <div class="grid text-gray-800">
+            <div>Final Score: <span class='text-blue-600'>${score} points</span></div>
+            <div>Hits: <span class='text-blue-600'>${hits} | Missed: <span class='text-blue-600'>${missed}</span></div>
+            <div>Accuracy: <span class='text-blue-600'>${accuracy}%</span></div>
+            <div>Average Points/Hit: <span class='text-blue-600'>${avgPointsPerHit}</span></div>
+            <div>Best Combo: <span class='text-blue-600'>${Math.max(consecutiveHits, 0)}x</span></div>
+        </div>
+        `
     }, 500);
-    
+
     // Optional: Save score to Firebase
     if (currentUser) {
         saveScoreToDatabase(score);

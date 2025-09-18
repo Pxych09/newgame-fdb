@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> - Whack a Mole!</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/808/808439.png" type="image/png">
+
+    <script type="module" src="firebase-init.js"></script>
+    <style>
+        .hole {
+            background-color: #f2f2f2;
+            border: 1.5px solid rgb(184, 6, 62);
+            width: min(90px, 100%);
+            aspect-ratio: 1;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            display: grid; place-items: center;
+
+        }
+        .mole {
+            content: '';
+            inset: 0;
+            width: 45px; aspect-ratio: 1;
+            position: absolute;
+            background-color: rgb(5, 25, 86);
+            border-radius: 100%;
+            margin: auto;
+            transition: ease-in;
+        }
+        #whackamoleBoard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            margin-inline: auto;
+            gap: 1em;
+            place-items: center;
+            overflow: hidden;
+        }
+    </style>
+
+</head>
+<body class="dark:text-white min-h-screen bg-[#0d1d31]">
+    
+    <!-- AUTH CHEKING -->
+    <div id="auth-check" class="text-center my-5 font-bold italic text-white">Checking authentication...</div>
+    
+    <!-- <div class="main-container border-2 border-blue-400 p-2 hidden"> -->
+    <div class="main-container px-4">
+        <div class="p-2 text-center hidden"><h1>Welcome, <span id="usernameDisplay"></span>!</h1></div>
+
+        <div class="p-2 my-2 w-64 mx-auto text-xs">
+            <div class="p-1 font-bold">Timer: <span id="timerWhack">00:00</span></div>
+            <div class="p-1 font-bold">Score: <span id="scoreWhack">0</span></div>
+            <div class="p-1 font-bold">Moles Hit: <span id="hitsWhack">0</span></div>
+            <div class="p-1 font-bold">Moles Missed: <span id="missedWhack">-</span></div>
+            <div class="p-1 font-bold">Accuracy: <span id="accuracyWhack">-</span></div>
+        </div>
+
+        <div class="border-2 border-blue-200 rounded-lg p-4 grid w-full" id="whackamoleBoard">
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+            <div class="hole">
+                <div class="mole"></div>
+            </div>
+        </div>
+
+        
+        <div class="p-2 my-2 w-48 mx-auto">
+            <button class="py-2 px-4 rounded-md bg-green-400 hover:bg-green-300 text-white w-full font-bold" type="button" id="startWhack">Start</button>
+            <button class="mt-2 py-2 px-4 rounded-md bg-gray-400 hover:bg-gray-300 text-white w-full font-bold" type="button" id="dashBoardWhack">Dashboard</button>
+        </div>
+
+    </div>
+
+
+
+    <script type="module" src="whackamole.js"></script>
+</body>
+</html>

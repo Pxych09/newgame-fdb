@@ -43,11 +43,13 @@ const refs = {
     userDisplayName: $('#user-display-name'),
     topPlayerPairs: $('#top-pair-players-list'),
     topPlayerPuzzles: $('#top-puzzle-players-list'),
+    topPlayerWhack: $('#top-whack-players-list'),
     mostActivePlayer: $('#most-active-list'),
     
     // Navigation buttons
     playPairButton: $('#play-pair-button'),
     playPuzzleButton: $('#play-puzzle-button'),
+    playWhackButton: $('#play-whack-button'),
     inventoryButton: $('#inventory-button')
 };
 
@@ -278,6 +280,7 @@ async function loadUserStats(user) {
                 puzzleGamesPlayed: 0,
                 bestPuzzleMoves: 0,
                 bestPuzzleTime: 0,
+                bestScoreInWhack: 0,
                 totalGamesPlayed: 0,
                 createdAt: new Date()
             };
@@ -397,6 +400,55 @@ async function topPlayerAtPuzzle() {
     }
 }
 
+async function topPlayerAtWhackAMole() {
+    try {
+        const topPlayersQuery = query(
+            collection(db, "users"), 
+            orderBy("whackamoleHighScore", "desc"), 
+            limit(10)
+        );
+        
+        const querySnapshot = await getDocs(topPlayersQuery);
+        refs.topPlayerWhack.innerHTML = "";
+        
+        if (querySnapshot.empty) {
+            refs.topPlayerWhack.innerHTML = '<div class="text-center py-4 text-gray-500">No players yet</div>';
+            return;
+        }
+        
+        let position = 1;
+        querySnapshot.forEach(doc => {
+            const player = doc.data();
+            const isCurrentUser = currentUser && doc.id === currentUser.uid;
+            const playerElement = document.createElement("div");
+            
+            playerElement.className = `flex justify-between items-center py-2 px-3 rounded ${
+                isCurrentUser ? "bg-blue-50 border border-blue-200" : "bg-gray-50"
+            }`;
+
+            const displayName = getPlayerName(player.email, player.nickname);
+            const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
+            
+            playerElement.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <span class="font-bold text-sm">${medal} #${position}</span>
+                    <span class="text-sm ${isCurrentUser ? "text-blue-800 font-medium" : "text-gray-800"}">
+                        ${displayName} ${isCurrentUser ? "(You)" : ""}
+                    </span>
+                </div>
+                <span class="font-bold text-xs text-pink-600">${player.whackamoleHighScore || 0} ${ player.whackamoleGamesPlayed != 0 ? `(${player.whackamoleGamesPlayed}) played` : ''}</span>
+            `;
+            
+            refs.topPlayerWhack.appendChild(playerElement);
+            position++;
+        });
+        
+    } catch (error) {
+        console.error("Error loading top players:", error);
+        refs.topPlayerWhack.innerHTML = '<div class="text-center text-sm py-2 text-red-600 bg-red-100 rounded">Failed to load!</div>';
+    }
+}
+
 async function mostActivePlayers() {
     try {
         const activePlayersQuery = query(
@@ -457,6 +509,7 @@ async function initializeDashboard(user) {
             loadUserStats(user),
             topPlayerAtPairings(),
             topPlayerAtPuzzle(),
+            topPlayerAtWhackAMole(),
             mostActivePlayers()
         ]);
     } catch (error) {
@@ -507,6 +560,7 @@ refs.passwordInput.addEventListener('input', () => {
 refs.playPairButton.addEventListener('click', () => navigateToPage('game.html'));
 refs.playPuzzleButton.addEventListener('click', () => navigateToPage('puzzle.html'));
 refs.inventoryButton.addEventListener('click', () => navigateToPage('inventory.html'));
+refs.playWhackButton.addEventListener('click', () => navigateToPage('whackamole.html'));
 
 // Authentication State Listener
 onAuthStateChanged(auth, (user) => {
